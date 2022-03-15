@@ -1,5 +1,5 @@
 .eqv N 4
-.include "./MACROSv21.s"
+.include "../MACROSv21.s"
 .text
 #addi sp,sp,-200			#cria pilha
 #addi s0,sp,-200
@@ -58,8 +58,8 @@ LOOP1:
 	
 PREPARAPREPARAOPCOES:
 	
-        addi sp,sp,-200			#cria pilha
-        addi s0,sp, 200
+        addi sp,sp,-264			#cria pilha
+        addi s0,sp, 264
         
         li t5, 0
         sw t5, -144(s0)
@@ -418,22 +418,25 @@ r_loop:
 			sw t3, -84(s0)
 						
 			sb a0, 0(t3)		# Armazena o caractere no array
-							
-			lw t1, -112(s0)													
-			addi t1, t1, 1		# Incrementa o contador
-			sw t1, -112(s0)
 			
 			sb a0 -20(s0)		#salva o caractere ascii para a tradução
 			
-			#j COLOREBOLINHA
+			#################VERIFICA SE É VALIDO############################
 			
-			li t0, 8      	#carrega o limite da iteração
-			sw t0, -92(s0)
-		
-			li t0, 0	#carrega iterador/indice 
-			sw t0, -96(s0)
+			li s1, 0	#registrador que ira mostrar se é valido
+			sw s1, -200(s0)
 			
-			j transformaemcor
+			
+			li s1, 0 
+			sw s1, -192(s0)	#contador iterador 
+			
+			
+			addi s1,s10,5
+			sw s1, -196(s0) #limite do iterador realacionado a quantidade de cores 
+									
+			j e_valido											
+			##################################################################												
+
 					
 		
 r_fim:		ret	
@@ -987,6 +990,57 @@ atribuir_valor:	#aqui iremos colocar o char na posição certa, depois de ter veri
 	
 	j MAIN
 
-			
+										
+e_valido:
+	
+	lw t0, -192(s0)	#iterador
+	
+	la s1, ColorsName
+	add s2, s1, t0		#endereço da cor atualizado com o iterador
+	lb s1, 0(s2)		#char da lista ColorsName carregado em s1
+	lb s2, -20(s0)		#char do teclado a ser estudado carregado 
+	
+	bne s1,s2, nao_validado
+	
+	li s1, 1
+	sw s1, -200(s0)
+	
+nao_validado:
+	
+	lw t1, -196(s0)
+	lw t0, -192(s0)
+	addi t0,t0, 1
+	sw t0, -192(s0)
+	
+	bne t0, t1, e_valido	#fim iteração
+	
+	li t3, 1
+	lw t2,-200(s0)
+	bne t2, t3, musica_erro	#verifica se a0 é igual a 1, se for repete tudo
+	
+	##################CONTINUAÇÃO DO R LOOP ANTIGO##################
+	
+	lw t1, -112(s0)													
+	addi t1, t1, 1		# Incrementa o contador
+	sw t1, -112(s0)
+					
+	li t0, 8      	#carrega o limite da iteração
+	sw t0, -92(s0)
+		
+	li t0, 0	#carrega iterador/indice 
+	sw t0, -96(s0)
+		
+	j transformaemcor
+				
+musica_erro:
 
-.include "./SYSTEMv21.s"
+	li a7, 31
+	li a2,65 	#Brass (0-7) 
+	li a0, 64	#nota  D
+	li a1, 200	#duração
+	li a3, 100	#volume
+	ecall
+
+	j r_loop
+
+.include "../SYSTEMv21.s"
